@@ -1,0 +1,16 @@
+.node {
+    border-style: solid;
+    border-color: red;
+    
+}
+
+[draggable=true] {
+    cursor: move;
+}
+
+.handle{
+    background-color:green;
+    width:10px;
+    height:10px;
+
+}

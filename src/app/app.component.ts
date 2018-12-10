@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TreeViewComponent } from './tree-view/tree-view.component';
 
 @Component({
   selector: 'app-root',
