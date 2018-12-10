@@ -1,4 +1,13 @@
-import { Component, OnInit,ElementRef,Inject } from '@angular/core';
+import { Component, OnInit, Directive, Input, ViewChild } from '@angular/core';
+
+
+@Directive({
+  selector: '[var]',
+  exportAs: 'var'
+})
+export class NodeDirective {
+  @Input() var:Node;
+}
 
 @Component({
   selector: 'app-tree-view',
@@ -10,7 +19,9 @@ import { Component, OnInit,ElementRef,Inject } from '@angular/core';
   <ul>
     <ng-template #recursiveList let-list>
       <li *ngFor="let item of list">
-        <div id={{item.id}} class="node"  (click) = "item.toggleShowChildren()" draggable="true"> 
+        <div id={{item.id}} class="node dropzone"  (click) = "item.toggleShowChildren()" 
+        draggable="true" (dragover) = "item.handleDragOver($event)" (dragstart) = "item.handleDragStart($event)" (dragend) = "item.handleDragEnd($event)"
+        (dragenter) = "item.handleDragEnter($event)" (dragleave)="item.handleDragLeave($event)"> 
           {{item.name}} 
         </div>
         <ul *ngIf="item.children.length > 0 && item.showChildren">
@@ -26,11 +37,10 @@ import { Component, OnInit,ElementRef,Inject } from '@angular/core';
 
 export class TreeViewComponent implements OnInit {
   //https://www.html5rocks.com/en/tutorials/dnd/basics/
+  @Input('ngModel')
+  model: any
   root: Node;
-  elementRef: ElementRef;
-
-  constructor(@Inject(ElementRef) elementRef: ElementRef) {
-    this.elementRef = elementRef;
+  constructor() {
     this.root = new Node(null,"root");
 }
 
@@ -43,35 +53,17 @@ export class TreeViewComponent implements OnInit {
     for(let i =0;i<10;i++){
       new Node(node2);
     }
-    document.addEventListener("dragstart", this.handleDragStart);
-    document.addEventListener("dragend", this.handleDragEnd);
-
+   // document.addEventListener("dragstart", this.handleDragStart);
+   // document.addEventListener("dragend", this.handleDragEnd);
+   // document.addEventListener("drop", this.handleDrop);
+    //document.addEventListener("dragover",this.handleDragOver);
   }
-  onClick(event) {
-    console.log(event);
-  }
-  addTestNode(){
-    let node = new Node(this.root);
-  }
-
-  handleDragStart(e) {
-    this.dragged = e.target;
-    this.dragged.style.borderColor = "green";
-    e.dataTransfer.setData("Powitanie", e.target.id)
-   // console.log(e.srcElement);
-  }
-  handleDragEnd(e){
-    e.target.style.borderColor = "red";
-    console.log(e.srcElement);
-    this.dragged = null;
-  }
-  
-
-
 
 }
 
+
 class Node {
+  static dragged:Node = null;
   static currentId = 0;
   parent: Node;
   children: Node[] = []
@@ -99,21 +91,55 @@ class Node {
     this.showChildren= !this.showChildren;
   }
   grabStart(event){
-    console.log(event);
+    //console.log(event);
   }
   addChild(child:Node){
     if(child.parent != null){
-      console.log("Child has already parent");
+     // console.log("Child has already parent");
       return;
     }
     this.children[child.id] = child;
     child.parent = this;
   }
-  dragStart(event){
-    console.log(event);
-  }
+ 
   removeChild(child:Node){
     child.parent = null;
     delete this.children[child.id];
+  }
+
+  //CALLBACKS
+  handleDragStart(event){
+    Node.dragged = this;
+    event.srcElement.style.borderColor = "green";
+    event.dataTransfer.setData("Powitanie", this)
+    console.log(event);
+  }
+  handleDragEnd(event){
+    Node.dragged = null;
+    event.srcElement.style.borderColor = "red";
+  }
+  handleDragOver(event){
+    // return;
+    // console.log(this.id, ",",event.dataTransfer);
+    // document.getElementById(this.id.toString()).style.borderColor = "black";
+    // if(Node.dragged.id != this.id){
+    //   document.getElementById(this.id.toString()).style.borderColor = "black";
+    // }
+  }
+  handleDragEnter(event){
+    if(!event.target.classList){
+      return;
+    }
+    if(event.target.classList.contains("dropzone")){
+      event.srcElement.style.borderColor = "purple";
+    }
+  }
+  handleDragLeave(event){
+    if(!event.target.classList){
+      return;
+    }
+    if(event.target.classList.contains("dropzone")){
+      event.srcElement.style.borderColor = "red";
+    }
   }
 }
