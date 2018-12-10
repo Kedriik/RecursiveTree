@@ -1,4 +1,4 @@
-import { Component, OnInit,Input } from '@angular/core';
+import { Component, OnInit,ElementRef,Inject } from '@angular/core';
 
 @Component({
   selector: 'app-tree-view',
@@ -10,8 +10,8 @@ import { Component, OnInit,Input } from '@angular/core';
   <ul>
     <ng-template #recursiveList let-list>
       <li *ngFor="let item of list">
-        <div id={{item.id}} class="node"  (click) = "item.toggleShowChildren()" > 
-          <div class="handle" draggable="true" ondrag="item.dragStart(event)"></div> {{item.name}} 
+        <div id={{item.id}} class="node"  (click) = "item.toggleShowChildren()" draggable="true"> 
+          {{item.name}} 
         </div>
         <ul *ngIf="item.children.length > 0 && item.showChildren">
           <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }"></ng-container>
@@ -27,10 +27,14 @@ import { Component, OnInit,Input } from '@angular/core';
 export class TreeViewComponent implements OnInit {
   //https://www.html5rocks.com/en/tutorials/dnd/basics/
   root: Node;
-  constructor() {
+  elementRef: ElementRef;
+
+  constructor(@Inject(ElementRef) elementRef: ElementRef) {
+    this.elementRef = elementRef;
     this.root = new Node(null,"root");
-   }
-  
+}
+
+  dragged:any;
   ngOnInit() {
     let node1 = new Node(this.root);
     let node2 = new Node(node1);
@@ -39,10 +43,30 @@ export class TreeViewComponent implements OnInit {
     for(let i =0;i<10;i++){
       new Node(node2);
     }
+    document.addEventListener("dragstart", this.handleDragStart);
+    document.addEventListener("dragend", this.handleDragEnd);
+
+  }
+  onClick(event) {
+    console.log(event);
   }
   addTestNode(){
     let node = new Node(this.root);
   }
+
+  handleDragStart(e) {
+    this.dragged = e.target;
+    this.dragged.style.borderColor = "green";
+    e.dataTransfer.setData("Powitanie", e.target.id)
+   // console.log(e.srcElement);
+  }
+  handleDragEnd(e){
+    e.target.style.borderColor = "red";
+    console.log(e.srcElement);
+    this.dragged = null;
+  }
+  
+
 
 
 }
@@ -85,11 +109,11 @@ class Node {
     this.children[child.id] = child;
     child.parent = this;
   }
+  dragStart(event){
+    console.log(event);
+  }
   removeChild(child:Node){
     child.parent = null;
     delete this.children[child.id];
   }
-
-  
-
 }
