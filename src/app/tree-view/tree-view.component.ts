@@ -24,7 +24,7 @@ export class NodeDirective {
         (dragenter) = "item.handleDragEnter($event)" (dragleave)="item.handleDragLeave($event)"> 
           {{item.name}} 
         </div>
-        <ul *ngIf="item.children.length > 0 && item.showChildren">
+        <ul id = {{-item.id}} class ="dropzone" *ngIf="item.children.length > 0 && item.showChildren">
           <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }"></ng-container>
         </ul>
       </li>
@@ -56,7 +56,25 @@ export class TreeViewComponent implements OnInit {
    // document.addEventListener("dragstart", this.handleDragStart);
    // document.addEventListener("dragend", this.handleDragEnd);
    // document.addEventListener("drop", this.handleDrop);
-    //document.addEventListener("dragover",this.handleDragOver);
+    document.addEventListener("dragenter",this.handleDragEnter);
+    document.addEventListener("dragleave",this.handleDragLeave);
+  }
+  handleDragEnter(event){
+    
+    if(!event.srcElement.classList){
+      return;
+    }
+    if(event.srcElement.classList.contains("dropzone")){
+      event.srcElement.style.backgroundColor="yellow";
+    }
+  }
+  handleDragLeave(event){
+    if(!event.srcElement.classList){
+      return;
+    }
+    if(event.srcElement.classList.contains("dropzone")){
+      event.srcElement.style.backgroundColor="";
+    }
   }
 
 }
@@ -88,7 +106,7 @@ class Node {
     Node.currentId +=1;
   }
   toggleShowChildren(){
-    this.showChildren= !this.showChildren;
+    this.showChildren = !this.showChildren;
   }
   grabStart(event){
     //console.log(event);

@@ -18,12 +18,13 @@ li{
     cursor: move;
   }
   .dropzone {
-    width: 200px;
-    height: 20px;
   }
 .handle{
     background-color:green;
     width:10px;
     height:10px;
 
+}
+.tree{
+    width:10%;
 }
