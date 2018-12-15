@@ -15,14 +15,13 @@ export class NodeDirective {
   styleUrls: ['./tree-view.component.css'],
   template: `
   <h1>Angular 2 Recursive List</h1>
-  <div class = "tree">
+  <div class = "tree" (window:resize)="onResize($event)">
   <ul>
     <ng-template #recursiveList let-list>
-      <li *ngFor="let item of list">
-        <div id={{item.id}} class="node dropzone"  (click) = "item.toggleShowChildren()" 
-        draggable="true" (dragover) = "item.handleDragOver($event)" (dragstart) = "item.handleDragStart($event)" (dragend) = "item.handleDragEnd($event)"
-        (dragenter) = "item.handleDragEnter($event)" (dragleave)="item.handleDragLeave($event)"> 
-          {{item.name}} 
+      <li *ngFor="let item of list"  >
+        <div id={{item.id}} class="dropzone node"  (click) = "item.toggleShowChildren()" 
+        draggable="true"  > 
+        {{item.name}} 
         </div>
         <ul id = {{-item.id}} class ="dropzone" *ngIf="item.children.length > 0 && item.showChildren">
           <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }"></ng-container>
@@ -53,14 +52,43 @@ export class TreeViewComponent implements OnInit {
     for(let i =0;i<10;i++){
       new Node(node2);
     }
-   // document.addEventListener("dragstart", this.handleDragStart);
-   // document.addEventListener("dragend", this.handleDragEnd);
-   // document.addEventListener("drop", this.handleDrop);
+    document.addEventListener("dragstart", this.handleDragStart);
+    document.addEventListener("dragend", this.handleDragEnd);
+    document.addEventListener("drop", this.handleDrop);
     document.addEventListener("dragenter",this.handleDragEnter);
     document.addEventListener("dragleave",this.handleDragLeave);
+    document.addEventListener("dragover",this.handleDragOver);
+  }
+  onResize(event) {
+    this.collapseNodes(this.root);
+  }
+  handleDragStart(event){
+    event.dataTransfer.setData("text/plain", event.target.id);
+  }
+  collapseNodes(node:Node){
+    for(let i=0;i<node.children.length;i++){
+      node.children[i].showChildren = false;
+      if(node.children[i].children.length>0){
+        this.collapseNodes(node.children[i]);
+      }
+    }
   }
   handleDragEnter(event){
     
+    if(!event.srcElement.classList){
+      return;
+    }
+    if(event.srcElement.classList.contains("dropzone")){
+      event.srcElement.style.backgroundColor="yellow";
+    }
+  }
+  handleDrop(event){
+    //console.log(event.srcElement);
+    event.srcElement.style.backgroundColor="";
+    event.preventDefault();
+  }
+  handleDragOver(event){
+    event.preventDefault();
     if(!event.srcElement.classList){
       return;
     }
@@ -76,6 +104,10 @@ export class TreeViewComponent implements OnInit {
       event.srcElement.style.backgroundColor="";
     }
   }
+  handleDragEnd(event){
+    event.preventDefault();
+    event.srcElement.style.backgroundColor="";
+  }
 
 }
 
@@ -83,6 +115,7 @@ export class TreeViewComponent implements OnInit {
 class Node {
   static dragged:Node = null;
   static currentId = 0;
+  static allNodes = {};
   parent: Node;
   children: Node[] = []
   id:number;
@@ -103,6 +136,7 @@ class Node {
     }
     this.classes.push("node");
     this.id = Node.currentId;
+    Node.allNodes[this.id] = this;
     Node.currentId +=1;
   }
   toggleShowChildren(){
@@ -123,41 +157,5 @@ class Node {
   removeChild(child:Node){
     child.parent = null;
     delete this.children[child.id];
-  }
-
-  //CALLBACKS
-  handleDragStart(event){
-    Node.dragged = this;
-    event.srcElement.style.borderColor = "green";
-    event.dataTransfer.setData("Powitanie", this)
-    console.log(event);
-  }
-  handleDragEnd(event){
-    Node.dragged = null;
-    event.srcElement.style.borderColor = "red";
-  }
-  handleDragOver(event){
-    // return;
-    // console.log(this.id, ",",event.dataTransfer);
-    // document.getElementById(this.id.toString()).style.borderColor = "black";
-    // if(Node.dragged.id != this.id){
-    //   document.getElementById(this.id.toString()).style.borderColor = "black";
-    // }
-  }
-  handleDragEnter(event){
-    if(!event.target.classList){
-      return;
-    }
-    if(event.target.classList.contains("dropzone")){
-      event.srcElement.style.borderColor = "purple";
-    }
-  }
-  handleDragLeave(event){
-    if(!event.target.classList){
-      return;
-    }
-    if(event.target.classList.contains("dropzone")){
-      event.srcElement.style.borderColor = "red";
-    }
   }
 }
