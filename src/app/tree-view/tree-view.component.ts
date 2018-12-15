@@ -14,24 +14,23 @@ export class NodeDirective {
   templateUrl: './tree-view.component.html',
   styleUrls: ['./tree-view.component.css'],
   template: `
-  <h1>Angular 2 Recursive List</h1>
-  <div class = "tree" (window:resize)="onResize($event)">
-  <ul>
-    <ng-template #recursiveList let-list>
-      <li *ngFor="let item of list"  >
-        <div id={{item.id}} class="dropzone node"  (click) = "item.toggleShowChildren()" 
-        draggable="true"  > 
-        {{item.name}} 
-        </div>
-        <ul id = {{-item.id}} class ="dropzone" *ngIf="item.children.length > 0 && item.showChildren">
-          <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }"></ng-container>
-        </ul>
-      </li>
-    </ng-template>
-    <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: root.children }"></ng-container>
-  </ul>
-  </div>
-`
+          <h1>Angular 2 Recursive List</h1>
+          <div  (window:resize)="onResize($event)">
+          <ul class="tree">
+            <ng-template #recursiveList let-list>
+              <li *ngFor="let item of list">
+              <div id={{item.id}} class="dropzone node"  (click) = "item.toggleShowChildren()" draggable="true"  > 
+                {{item.name}}
+              </div>
+              <ul id = {{-item.id}} class ="dropzone" *ngIf="item.children.length > 0 && item.showChildren" >
+                  <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: item.children }"></ng-container>
+                </ul>
+              </li>
+            </ng-template>
+            <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: root.children }"></ng-container>
+          </ul>
+          <div>
+          `
 })
 
 export class TreeViewComponent implements OnInit {
@@ -63,7 +62,7 @@ export class TreeViewComponent implements OnInit {
     this.collapseNodes(this.root);
   }
   handleDragStart(event){
-    event.dataTransfer.setData("text/plain", event.target.id);
+    event.dataTransfer.setData("id", event.target.id);
   }
   collapseNodes(node:Node){
     for(let i=0;i<node.children.length;i++){
@@ -83,9 +82,25 @@ export class TreeViewComponent implements OnInit {
     }
   }
   handleDrop(event){
-    //console.log(event.srcElement);
-    event.srcElement.style.backgroundColor="";
+    if(!event.srcElement.classList){
+      return;
+    }
+    if(!event.srcElement.classList.contains("dropzone")){
+      return;
+    }
+    if(event.srcElement.classList.contains("node")){
+      event.srcElement.style.backgroundColor="";
+      let droppedOnNode = Node.allNodes[event.srcElement.id];
+      let droppedNode = Node.allNodes[event.dataTransfer.getData("id")];
+      if(!droppedOnNode.checkIfParent(droppedNode) && droppedNode != droppedOnNode){
+        droppedOnNode.addChild(droppedNode);
+      }
+      //console.log(droppedOnNode.checkIfParent(droppedNode));
+      //console.log(node.checkIfParent());
+    }
+    //let droppedNode = Node.allNodes[]
     event.preventDefault();
+    event.stopPropagation();
   }
   handleDragOver(event){
     event.preventDefault();
@@ -143,19 +158,35 @@ class Node {
     this.showChildren = !this.showChildren;
   }
   grabStart(event){
-    //console.log(event);
+  }
+  checkIfParent(node:Node){
+    let currNode:Node = this;
+    
+    while(currNode != null){
+      if(currNode.parent == node){
+        return true;
+      }
+      currNode = currNode.parent
+    }
+    return false;
   }
   addChild(child:Node){
-    if(child.parent != null){
-     // console.log("Child has already parent");
-      return;
+    if(child.parent!=null){
+      child.parent.removeChild(child);
     }
-    this.children[child.id] = child;
-    child.parent = this;
+    child.parent = this
+    this.children.push(child);
+    child.showChildren = true;
+    this.showChildren = true;
   }
  
   removeChild(child:Node){
-    child.parent = null;
-    delete this.children[child.id];
+    let updatedChildren = []
+    for(let i =0;i<this.children.length;i++){
+      if(this.children[i] != child){
+        updatedChildren.push(this.children[i]);
+      }
+    }
+    this.children = updatedChildren;
   }
 }
